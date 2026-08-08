@@ -1,3 +1,4 @@
+import Link from "next/link";
 import {
   URGENCY_STYLES,
   daysUntil,
@@ -38,16 +39,25 @@ export default function Home() {
         </p>
 
         <div className="mt-8 flex flex-wrap items-center gap-3">
-          <span className="rounded-full bg-accent px-5 py-2.5 text-sm font-medium text-accent-foreground">
-            Coming soon
-          </span>
+          <Link
+            href="/signup"
+            className="rounded-full bg-accent px-5 py-2.5 text-sm font-medium text-accent-foreground transition-opacity hover:opacity-90"
+          >
+            Get started
+          </Link>
+          <Link
+            href="/login"
+            className="rounded-full border border-border px-5 py-2.5 text-sm font-medium transition-colors hover:bg-surface-muted"
+          >
+            Sign in
+          </Link>
           <a
             href="https://github.com/laxmihatte/shelfie"
             target="_blank"
             rel="noreferrer"
-            className="rounded-full border border-border px-5 py-2.5 text-sm font-medium transition-colors hover:bg-surface-muted"
+            className="px-2 py-2.5 text-sm font-medium text-foreground-muted transition-colors hover:text-foreground"
           >
-            View source
+            Source
           </a>
         </div>
 

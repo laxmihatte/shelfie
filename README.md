@@ -54,15 +54,40 @@ automatically from then on.
 
 ```bash
 npm install
+cp .env.example .env.local   # then fill in your Supabase project values
 npm run dev
 ```
 
 Open http://localhost:3000.
 
+### Database setup
+
+Create a project at [database.new](https://database.new), then run
+[`supabase/migrations/0001_init.sql`](supabase/migrations/0001_init.sql) in the
+SQL Editor. It creates the schema and enables Row Level Security on every
+user-owned table.
+
+Under **Authentication → URL Configuration**, add `<your-site>/auth/confirm` to
+the redirect allow list so signup confirmation links resolve.
+
+## Data model
+
+| Table | Purpose | Access |
+|---|---|---|
+| `profiles` | One row per user, created by trigger on signup | Own row only |
+| `food_items` | The pantry — what you have, when it expires, its fate | Own rows only |
+| `receipts` | Uploaded receipt images and raw extraction output | Own rows only |
+| `shelf_life` | Curated reference: canonical food → days until it spoils | Read-only, shared |
+| `item_mappings` | Learned cache of receipt string → canonical food | Own rows only |
+
+Isolation is enforced by Postgres RLS policies rather than by application-level
+query filters. A forgotten `.eq('user_id', …)` is a cross-user data leak; a
+policy fails closed instead.
+
 ## Roadmap
 
 - [x] **Day 1** — Scaffold, design tokens, urgency model, deploy
-- [ ] **Day 2** — Supabase schema + auth, RLS on every table
+- [x] **Day 2** — Supabase schema + auth, RLS on every table
 - [ ] **Day 3** — Manual item entry and list view
 - [ ] **Day 4** — Shelf-life table, auto-filled expiry dates
 - [ ] **Day 5** — Expiry dashboard, mark used / mark wasted
