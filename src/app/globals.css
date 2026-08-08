@@ -1,26 +1,84 @@
 @import "tailwindcss";
 
+/*
+ * Design tokens.
+ *
+ * The `--urgency-*` scale is the core of the product: every item in the pantry
+ * renders somewhere on it, so it is defined once here rather than as ad-hoc
+ * Tailwind classes at each call site. Buckets are defined in lib/urgency.ts.
+ */
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
+  --background: #fbfaf7;
+  --surface: #ffffff;
+  --surface-muted: #f4f2ed;
+  --foreground: #1a1a17;
+  --foreground-muted: #6b6961;
+  --border: #e5e1d8;
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --accent: #2f7d4f;
+  --accent-foreground: #ffffff;
+
+  --urgency-expired: #9f1239;
+  --urgency-urgent: #c2410c;
+  --urgency-soon: #a16207;
+  --urgency-fresh: #2f7d4f;
+
+  --urgency-expired-bg: #fff1f2;
+  --urgency-urgent-bg: #fff7ed;
+  --urgency-soon-bg: #fefce8;
+  --urgency-fresh-bg: #f0fdf4;
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+    --background: #14140f;
+    --surface: #1c1c17;
+    --surface-muted: #24241d;
+    --foreground: #f0efe9;
+    --foreground-muted: #a3a096;
+    --border: #33322a;
+
+    --accent: #4ade80;
+    --accent-foreground: #0d1f14;
+
+    --urgency-expired: #fb7185;
+    --urgency-urgent: #fb923c;
+    --urgency-soon: #facc15;
+    --urgency-fresh: #4ade80;
+
+    --urgency-expired-bg: #2a1218;
+    --urgency-urgent-bg: #2a1a10;
+    --urgency-soon-bg: #26220f;
+    --urgency-fresh-bg: #10241a;
   }
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-surface: var(--surface);
+  --color-surface-muted: var(--surface-muted);
+  --color-foreground: var(--foreground);
+  --color-foreground-muted: var(--foreground-muted);
+  --color-border: var(--border);
+
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+
+  --color-expired: var(--urgency-expired);
+  --color-urgent: var(--urgency-urgent);
+  --color-soon: var(--urgency-soon);
+  --color-fresh: var(--urgency-fresh);
+
+  --color-expired-bg: var(--urgency-expired-bg);
+  --color-urgent-bg: var(--urgency-urgent-bg);
+  --color-soon-bg: var(--urgency-soon-bg);
+  --color-fresh-bg: var(--urgency-fresh-bg);
+
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
 }
