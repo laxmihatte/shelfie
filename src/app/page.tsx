@@ -43,6 +43,8 @@ export default function Home() {
           </span>
           <a
             href="https://github.com/laxmihatte/shelfie"
+            target="_blank"
+            rel="noreferrer"
             className="rounded-full border border-border px-5 py-2.5 text-sm font-medium transition-colors hover:bg-surface-muted"
           >
             View source

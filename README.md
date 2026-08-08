@@ -1,5 +1,7 @@
 # Shelfie
 
+**[Live demo →](https://shelfie-laxmihattes-projects.vercel.app)**
+
 Stop throwing out groceries you forgot you bought.
 
 Snap a photo of a grocery receipt. Shelfie extracts what you bought, works out
