@@ -1,5 +1,6 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
+import { supabaseEnv } from "./env";
 
 /** Routes that require a signed-in user. */
 const PROTECTED_PREFIXES = ["/dashboard"];
@@ -9,6 +10,14 @@ const AUTH_ONLY_PREFIXES = ["/login", "/signup"];
 
 const startsWithAny = (path: string, prefixes: string[]) =>
   prefixes.some((p) => path === p || path.startsWith(`${p}/`));
+
+function redirectTo(request: NextRequest, pathname: string, next?: string) {
+  const url = request.nextUrl.clone();
+  url.pathname = pathname;
+  url.search = "";
+  if (next) url.searchParams.set("next", next);
+  return NextResponse.redirect(url);
+}
 
 /**
  * Refreshes the auth session on every request and gates protected routes.
@@ -22,50 +31,50 @@ const startsWithAny = (path: string, prefixes: string[]) =>
  *    that lands mid-request still makes it into `Set-Cookie`.
  */
 export async function updateSession(request: NextRequest) {
+  const { pathname } = request.nextUrl;
+  const env = supabaseEnv();
+
+  // Unconfigured deploy: public pages still render, but anything requiring a
+  // session fails closed rather than letting requests through unauthenticated.
+  if (!env) {
+    return startsWithAny(pathname, PROTECTED_PREFIXES)
+      ? redirectTo(request, "/login", pathname)
+      : NextResponse.next({ request });
+  }
+
   let response = NextResponse.next({ request });
 
-  const supabase = createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    {
-      cookies: {
-        getAll() {
-          return request.cookies.getAll();
-        },
-        setAll(cookiesToSet, headers) {
-          for (const { name, value } of cookiesToSet) {
-            request.cookies.set(name, value);
-          }
-          response = NextResponse.next({ request });
-          for (const { name, value, options } of cookiesToSet) {
-            response.cookies.set(name, value, options);
-          }
-          // Auth responses must never be cached by Vercel's CDN, or one
-          // user's refreshed token can be served to another.
-          for (const [key, headerValue] of Object.entries(headers)) {
-            response.headers.set(key, headerValue);
-          }
-        },
+  const supabase = createServerClient(env.url, env.anonKey, {
+    cookies: {
+      getAll() {
+        return request.cookies.getAll();
+      },
+      setAll(cookiesToSet, headers) {
+        for (const { name, value } of cookiesToSet) {
+          request.cookies.set(name, value);
+        }
+        response = NextResponse.next({ request });
+        for (const { name, value, options } of cookiesToSet) {
+          response.cookies.set(name, value, options);
+        }
+        // Auth responses must never be cached by Vercel's CDN, or one user's
+        // refreshed token can be served to another.
+        for (const [key, headerValue] of Object.entries(headers)) {
+          response.headers.set(key, headerValue);
+        }
       },
     },
-  );
+  });
 
   const { data } = await supabase.auth.getClaims();
   const isSignedIn = Boolean(data?.claims);
-  const { pathname } = request.nextUrl;
 
   if (!isSignedIn && startsWithAny(pathname, PROTECTED_PREFIXES)) {
-    const url = request.nextUrl.clone();
-    url.pathname = "/login";
-    url.searchParams.set("next", pathname);
-    return NextResponse.redirect(url);
+    return redirectTo(request, "/login", pathname);
   }
 
   if (isSignedIn && startsWithAny(pathname, AUTH_ONLY_PREFIXES)) {
-    const url = request.nextUrl.clone();
-    url.pathname = "/dashboard";
-    url.search = "";
-    return NextResponse.redirect(url);
+    return redirectTo(request, "/dashboard");
   }
 
   return response;

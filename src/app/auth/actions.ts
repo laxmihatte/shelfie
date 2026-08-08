@@ -2,7 +2,8 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
-import { createClient } from "@/lib/supabase/server";
+import { SUPABASE_SETUP_MESSAGE } from "@/lib/supabase/env";
+import { createClient, isSupabaseConfigured } from "@/lib/supabase/server";
 
 export type AuthState = { error: string | null };
 
@@ -22,6 +23,8 @@ export async function signIn(
   _prev: AuthState,
   formData: FormData,
 ): Promise<AuthState> {
+  if (!isSupabaseConfigured()) return { error: SUPABASE_SETUP_MESSAGE };
+
   const { email, password } = readCredentials(formData);
   if (!email || !password) return { error: "Email and password are required." };
 
@@ -40,6 +43,8 @@ export async function signUp(
   _prev: AuthState,
   formData: FormData,
 ): Promise<AuthState> {
+  if (!isSupabaseConfigured()) return { error: SUPABASE_SETUP_MESSAGE };
+
   const { email, password } = readCredentials(formData);
   if (!email || !password) return { error: "Email and password are required." };
   if (password.length < 8) {
@@ -61,8 +66,10 @@ export async function signUp(
 }
 
 export async function signOut() {
-  const supabase = await createClient();
-  await supabase.auth.signOut();
+  if (isSupabaseConfigured()) {
+    const supabase = await createClient();
+    await supabase.auth.signOut();
+  }
   revalidatePath("/", "layout");
   redirect("/login");
 }
