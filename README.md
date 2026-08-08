@@ -88,7 +88,7 @@ policy fails closed instead.
 
 - [x] **Day 1** — Scaffold, design tokens, urgency model, deploy
 - [x] **Day 2** — Supabase schema + auth, RLS on every table
-- [ ] **Day 3** — Manual item entry and list view
+- [x] **Day 3** — Manual item entry and list view
 - [ ] **Day 4** — Shelf-life table, auto-filled expiry dates
 - [ ] **Day 5** — Expiry dashboard, mark used / mark wasted
 - [ ] **Day 6** — Waste stats ("you threw away $34 this month")
