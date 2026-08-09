@@ -90,7 +90,7 @@ policy fails closed instead.
 - [x] **Day 2** — Supabase schema + auth, RLS on every table
 - [x] **Day 3** — Manual item entry and list view
 - [x] **Day 4** — Shelf-life table, auto-filled expiry dates
-- [ ] **Day 5** — Expiry dashboard, mark used / mark wasted
+- [x] **Day 5** — Expiry dashboard, mark used / mark wasted
 - [ ] **Day 6** — Waste stats ("you threw away $34 this month")
 - [ ] **Day 8** — Receipt upload and storage
 - [ ] **Day 9** — Vision extraction to structured JSON
