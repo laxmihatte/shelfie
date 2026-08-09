@@ -4,7 +4,11 @@ import { revalidatePath } from "next/cache";
 import { STORAGE_OPTIONS, type ItemStatus, type Storage } from "@/lib/db-types";
 import { createClient } from "@/lib/supabase/server";
 
-export type ItemFormState = { error: string | null };
+export type ItemFormState = {
+  error: string | null;
+  /** Set on success; changing it remounts the form fields to clear them. */
+  submittedAt?: number;
+};
 
 const DATE_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
 
@@ -32,6 +36,7 @@ export async function addItem(
   const expires_at = String(formData.get("expires_at") ?? "");
   const unit = String(formData.get("unit") ?? "").trim();
   const quantity = parseQuantity(formData.get("quantity"));
+  const shelf_life_id = String(formData.get("shelf_life_id") ?? "").trim();
 
   if (!name) return { error: "Give the item a name." };
   if (name.length > 120) return { error: "That name is too long." };
@@ -58,13 +63,16 @@ export async function addItem(
     unit: unit || null,
     storage: parseStorage(formData.get("storage")),
     expires_at,
+    // A bad id would be rejected by the foreign key; send null rather than
+    // letting a stale client value fail the whole insert.
+    shelf_life_id: shelf_life_id || null,
     source: "manual",
   });
 
   if (error) return { error: "Could not save that item. Try again." };
 
   revalidatePath("/dashboard");
-  return { error: null };
+  return { error: null, submittedAt: Date.now() };
 }
 
 /** Marks an item used or wasted. `resolved_at` is required by a check constraint. */

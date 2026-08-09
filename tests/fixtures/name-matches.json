@@ -1,0 +1,33 @@
+{
+  "description": "Expected canonical food id for free-text item names. `null` means the matcher should decline rather than guess. Verified passing 28/28 against the seeded shelf_life table on Day 4; wired into a real test runner on Day 11.",
+  "cases": [
+    { "input": "milk", "expected": "milk_whole" },
+    { "input": "Whole Milk", "expected": "milk_whole" },
+    { "input": "2% milk", "expected": "milk_two_pct" },
+    { "input": "eggs", "expected": "eggs" },
+    { "input": "a dozen eggs", "expected": "eggs" },
+    { "input": "chicken breast", "expected": "chicken_raw" },
+    { "input": "chicken breasts", "expected": "chicken_raw" },
+    { "input": "ground beef", "expected": "beef_ground" },
+    { "input": "Spinach", "expected": "spinach" },
+    { "input": "baby spinach", "expected": "spinach" },
+    { "input": "bananas", "expected": "bananas" },
+    { "input": "banana", "expected": "bananas" },
+    { "input": "strawberries", "expected": "strawberries" },
+    { "input": "cheddar", "expected": "cheese_hard" },
+    { "input": "sharp cheddar cheese", "expected": "cheese_hard" },
+    { "input": "sourdough", "expected": "bread_artisan" },
+    { "input": "bread", "expected": "bread_sliced" },
+    { "input": "olive oil", "expected": "olive_oil" },
+    { "input": "greek yogurt", "expected": "yogurt" },
+    { "input": "romaine", "expected": "lettuce" },
+    { "input": "potatoes", "expected": "potatoes" },
+    { "input": "sweet potatoes", "expected": "sweet_potatoes" },
+    { "input": "leftovers", "expected": "leftovers" },
+    { "input": "ice cream", "expected": "ice_cream" },
+    { "input": "frozen peas", "expected": "frozen_veg" },
+    { "input": "dish soap", "expected": null },
+    { "input": "paper towels", "expected": null },
+    { "input": "batteries", "expected": null }
+  ]
+}

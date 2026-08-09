@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { signOut } from "@/app/auth/actions";
 import type { FoodItem } from "@/lib/db-types";
+import type { ShelfLifeEntry } from "@/lib/shelf-life";
 import { createClient } from "@/lib/supabase/server";
 import { AddItemForm } from "./add-item-form";
 import { ItemList } from "./item-list";
@@ -17,13 +18,20 @@ export default async function DashboardPage() {
 
   // No .eq('user_id') filter: the RLS policy scopes this to the caller. The
   // index on (user_id, expires_at) where status = 'active' backs this query.
-  const { data, error } = await supabase
-    .from("food_items")
-    .select("*")
-    .eq("status", "active")
-    .order("expires_at", { ascending: true });
+  const [itemsResult, shelfLifeResult] = await Promise.all([
+    supabase
+      .from("food_items")
+      .select("*")
+      .eq("status", "active")
+      .order("expires_at", { ascending: true }),
+    // ~90 rows of shared reference data, small enough to match against in the
+    // browser so the expiry date fills in as the user types.
+    supabase.from("shelf_life").select("*"),
+  ]);
 
+  const { data, error } = itemsResult;
   const items = (data ?? []) as FoodItem[];
+  const entries = (shelfLifeResult.data ?? []) as ShelfLifeEntry[];
 
   return (
     <main className="mx-auto w-full max-w-3xl flex-1 px-6 py-12">
@@ -51,7 +59,7 @@ export default async function DashboardPage() {
       </header>
 
       <div className="mt-8">
-        <AddItemForm />
+        <AddItemForm entries={entries} />
       </div>
 
       {error ? (

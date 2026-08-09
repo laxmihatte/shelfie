@@ -1,12 +1,20 @@
 "use client";
 
-import { useActionState, useEffect, useRef } from "react";
+import { useActionState, useMemo, useState } from "react";
 import { useFormStatus } from "react-dom";
-import { STORAGE_OPTIONS } from "@/lib/db-types";
+import { STORAGE_OPTIONS, toDateOnly, type Storage } from "@/lib/db-types";
+import {
+  daysFor,
+  expiryFor,
+  matchShelfLife,
+  type ShelfLifeEntry,
+} from "@/lib/shelf-life";
 import { addItem, type ItemFormState } from "./actions";
 
 const field =
   "w-full rounded-lg border border-border bg-surface px-3 py-2 text-sm outline-none placeholder:text-foreground-muted focus-visible:border-accent";
+
+const FALLBACK_DAYS = 7;
 
 function SubmitButton() {
   const { pending } = useFormStatus();
@@ -21,48 +29,64 @@ function SubmitButton() {
   );
 }
 
-/** Defaults the expiry picker to a week out — the common case for fridge items. */
-function defaultExpiry(): string {
+function inDays(days: number): string {
   const d = new Date();
-  d.setDate(d.getDate() + 7);
-  const pad = (n: number) => String(n).padStart(2, "0");
-  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+  d.setDate(d.getDate() + days);
+  return toDateOnly(d);
 }
 
-export function AddItemForm() {
-  const [state, formAction] = useActionState<ItemFormState, FormData>(addItem, {
-    error: null,
-  });
-  const formRef = useRef<HTMLFormElement>(null);
-  const nameRef = useRef<HTMLInputElement>(null);
+/**
+ * The editable fields.
+ *
+ * Split out so a successful submit can remount it via `key` and reset every
+ * field at once. Storage and expiry are derived from the matched shelf life
+ * during render, with explicit user edits held as overrides — deriving beats
+ * mirroring the match into state through an effect.
+ */
+function ItemFields({
+  entries,
+  error,
+  autoFocus,
+}: {
+  entries: ShelfLifeEntry[];
+  error: string | null;
+  autoFocus: boolean;
+}) {
+  const [name, setName] = useState("");
+  const [storageOverride, setStorageOverride] = useState<Storage | null>(null);
+  const [expiryOverride, setExpiryOverride] = useState<string | null>(null);
 
-  // Clear the form after a successful add so the next item can be typed
-  // straight away — entry usually happens in bursts after a shop.
-  useEffect(() => {
-    if (state.error === null) {
-      formRef.current?.reset();
-      nameRef.current?.focus();
-    }
-  }, [state]);
+  const match = useMemo(
+    () => (name.trim() ? matchShelfLife(name, entries) : null),
+    [name, entries],
+  );
+
+  const storage: Storage =
+    storageOverride ?? match?.entry.default_storage ?? "fridge";
+
+  const suggested = match ? expiryFor(match.entry, storage) : null;
+  const expiry =
+    expiryOverride ??
+    (suggested ? toDateOnly(suggested) : inDays(FALLBACK_DAYS));
+
+  const days = match ? daysFor(match.entry, storage) : null;
 
   return (
-    <form
-      ref={formRef}
-      action={formAction}
-      className="rounded-2xl border border-border bg-surface p-4 sm:p-5"
-    >
+    <>
       <div className="grid gap-3 sm:grid-cols-[1fr_auto_auto_auto]">
         <div className="space-y-1.5">
           <label htmlFor="name" className="block text-xs font-medium">
             Item
           </label>
           <input
-            ref={nameRef}
             id="name"
             name="name"
             required
             maxLength={120}
             placeholder="Spinach"
+            autoFocus={autoFocus}
+            value={name}
+            onChange={(e) => setName(e.target.value)}
             className={field}
           />
         </div>
@@ -89,7 +113,8 @@ export function AddItemForm() {
           <select
             id="storage"
             name="storage"
-            defaultValue="fridge"
+            value={storage}
+            onChange={(e) => setStorageOverride(e.target.value as Storage)}
             className={`${field} sm:w-28`}
           >
             {STORAGE_OPTIONS.map((s) => (
@@ -109,22 +134,61 @@ export function AddItemForm() {
             name="expires_at"
             type="date"
             required
-            defaultValue={defaultExpiry()}
+            value={expiry}
+            onChange={(e) => setExpiryOverride(e.target.value)}
             className={`${field} sm:w-40`}
           />
         </div>
       </div>
 
-      <div className="mt-4 flex items-center justify-between gap-4">
-        {state.error ? (
-          <p role="alert" className="text-sm text-expired">
-            {state.error}
-          </p>
-        ) : (
-          <span />
-        )}
+      {/* Carries the resolved canonical food id through to the server. */}
+      <input type="hidden" name="shelf_life_id" value={match?.entry.id ?? ""} />
+
+      <div className="mt-4 flex flex-wrap items-center justify-between gap-3">
+        <div className="min-h-5 text-xs">
+          {error ? (
+            <p role="alert" className="text-sm text-expired">
+              {error}
+            </p>
+          ) : match && days !== null ? (
+            <p className="text-foreground-muted">
+              Matched{" "}
+              <span className="font-medium text-foreground">
+                {match.entry.label}
+              </span>{" "}
+              — keeps about {days} {days === 1 ? "day" : "days"} in the{" "}
+              {storage}
+              {expiryOverride ? ", but your date is kept" : ""}.
+            </p>
+          ) : name.trim() ? (
+            <p className="text-foreground-muted">
+              No shelf-life match — set the date yourself.
+            </p>
+          ) : null}
+        </div>
+
         <SubmitButton />
       </div>
+    </>
+  );
+}
+
+export function AddItemForm({ entries }: { entries: ShelfLifeEntry[] }) {
+  const [state, formAction] = useActionState<ItemFormState, FormData>(addItem, {
+    error: null,
+  });
+
+  return (
+    <form
+      action={formAction}
+      className="rounded-2xl border border-border bg-surface p-4 sm:p-5"
+    >
+      <ItemFields
+        key={state.submittedAt ?? 0}
+        entries={entries}
+        error={state.error}
+        autoFocus={state.submittedAt !== undefined}
+      />
     </form>
   );
 }
